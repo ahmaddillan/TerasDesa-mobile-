@@ -113,7 +113,6 @@ class _HomepageState extends State<Homepage> {
           subtitle: 'Rp 130.000',
           categoryColor: Colors.orange[800]!,
           // onTap: () {
-          //   // <-- TAMBAHKAN FUNGSI INI
           //   Navigator.push(
           //     context,
           //     MaterialPageRoute(builder: (context) => const ),
