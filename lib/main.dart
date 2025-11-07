@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/register_page.dart';
+import 'package:terasdesa/homepage.dart';
 
 void main() {
   runApp(const MainApp());
@@ -13,10 +14,21 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green).copyWith(
+          primary: Colors.green[800]!,
+          secondary: Colors.amber[700]!,
+          background: Colors.grey[100]!,
+        ),
+        useMaterial3: true,
+        fontFamily: 'Poppins',
+      ),
+
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
+        '/homepage': (context) => const Homepage(),
       },
     );
   }
