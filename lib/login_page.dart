@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:terasdesa/homepage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -89,7 +89,12 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 24),
                 // Tombol Login
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Homepage()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B8E23),
                     foregroundColor: Colors.white,
