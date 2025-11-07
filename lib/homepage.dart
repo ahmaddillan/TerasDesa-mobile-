@@ -112,6 +112,7 @@ class _HomepageState extends State<Homepage> {
           title: 'Meja lesehan kayu',
           subtitle: 'Rp 130.000',
           categoryColor: Colors.orange[800]!,
+
           // onTap: () {
           //   Navigator.push(
           //     context,
