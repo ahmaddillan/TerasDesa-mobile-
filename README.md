@@ -1,4 +1,4 @@
-🏠 teras_desa: Aplikasi Digital Desa Nagrak
+🏠 TerasDesa: Aplikasi Digital Desa Nagrak
 Selamat datang di repositori proyek teras_desa! Aplikasi ini adalah solusi digital yang dirancang khusus untuk Desa Nagrak, bertujuan untuk meningkatkan transparansi data dan mempermudah berbagai aktivitas penduduk desa.
 
 ✨ Fitur Utama
@@ -39,3 +39,4 @@ flutter run
 
 🤝 Kontribusi
 Kami menyambut baik setiap kontribusi untuk menjadikan teras_desa lebih baik! Silakan ikuti proses standar fork-branch-pull request jika Anda ingin berkontribusi.
+
