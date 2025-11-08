@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:terasdesa/detailproduk.dart';
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/aset_page.dart';
-
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -115,12 +115,12 @@ class _HomepageState extends State<Homepage> {
           subtitle: 'Rp 130.000',
           categoryColor: Colors.orange[800]!,
 
-          // onTap: () {
-          //   Navigator.push(
-          //     context,
-          //     MaterialPageRoute(builder: (context) => const ),
-          //   );
-          // },
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Detailproduk()),
+            );
+          },
         ),
       ],
     );
@@ -144,9 +144,7 @@ class _HomepageState extends State<Homepage> {
         _buildQuickAccessItem(
           icon: Icons.construction_outlined,
           label: 'Pembangunan',
-          onTap: () {
-            
-          },
+          onTap: () {},
         ),
         _buildQuickAccessItem(
           icon: Icons.store_outlined,
@@ -161,7 +159,7 @@ class _HomepageState extends State<Homepage> {
   Widget _buildQuickAccessItem({
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
   }) {
     return Expanded(
       child: Card(
@@ -207,78 +205,82 @@ class _HomepageState extends State<Homepage> {
     required String title,
     required String subtitle,
     required Color categoryColor,
+    VoidCallback? onTap,
   }) {
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // item 1 :gambar
-          Container(
-            color: Colors.white,
-            height: 180,
-            width: double.infinity,
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.contain,
-              // Menampilkan loading spinner saat gambar dimuat
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                // SizedBox tidak perlu height lagi, Center sudah cukup
-                return const Center(child: CircularProgressIndicator());
-              },
-
-              // Menampilkan ikon error jika gambar gagal dimuat
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(
-                  child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                );
-              },
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // item 1 :gambar
+            Container(
+              color: Colors.white,
+              height: 180,
+              width: double.infinity,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          // item 2 : teks
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  category,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: categoryColor,
-                    letterSpacing: 0.5,
+            // item 2 : teks
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: categoryColor,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[800],
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[800],
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ], // 'children:' dari Column utama ditutup
-      ), // Column utama ditutup
-    ); // Card ditutup
+          ],
+        ),
+      ),
+    );
   }
 
   /// bottom navbar
