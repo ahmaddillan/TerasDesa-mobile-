@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:terasdesa/marketplace_page.dart';
 
 class AsetPage extends StatefulWidget {
   const AsetPage({super.key});
@@ -9,60 +9,67 @@ class AsetPage extends StatefulWidget {
 }
 
 class _AsetPageState extends State<AsetPage> {
-  // Data aset desa 
+  // Data aset desa
   final List<Map<String, dynamic>> asetDesa = [
-    { 
-      'nama': 'Balai Desa', 
-      'lokasi': 'Pusat Desa', 
-      'status': 'Tersedia', 
-      'gambar_url': 'https://cdn.digitaldesa.com/uploads/profil/32.01.02.2009/spanduk/396b9ba14698b0b96671172b7a23d7ba.png', 
-      'deskripsi': 'Gedung utama untuk administrasi dan pertemuan desa.', 
+    {
+      'nama': 'Balai Desa',
+      'lokasi': 'Pusat Desa',
+      'status': 'Tersedia',
+      'gambar_url':
+          'https://cdn.digitaldesa.com/uploads/profil/32.01.02.2009/spanduk/396b9ba14698b0b96671172b7a23d7ba.png',
+      'deskripsi': 'Gedung utama untuk administrasi dan pertemuan desa.',
     },
-    { 
-      'nama': 'Mobil Operasional Desa', 
-      'lokasi': 'Garasi Kantor Desa', 
-      'status': 'Tidak Tersedia', 
-      'gambar_url': 'https://img.icarcdn.com/mobil123-news/body/67281-suzuki_apv_1.5_sgx_arena_van_silver_2010.jpg', 
-      'deskripsi': 'Kendaraan siaga untuk keperluan operasional dan darurat.', 
+    {
+      'nama': 'Mobil Operasional Desa',
+      'lokasi': 'Garasi Kantor Desa',
+      'status': 'Tidak Tersedia',
+      'gambar_url':
+          'https://img.icarcdn.com/mobil123-news/body/67281-suzuki_apv_1.5_sgx_arena_van_silver_2010.jpg',
+      'deskripsi': 'Kendaraan siaga untuk keperluan operasional dan darurat.',
     },
-    { 
-      'nama': 'Aula', 
-      'lokasi': 'Kantor Desa', 
-      'status': 'Tersedia', 
-      'gambar_url': 'https://beritacianjur.com/wp-content/uploads/2021/07/WhatsApp-Image-2021-07-07-at-19.05.40.jpeg', 
-      'deskripsi': 'Ruang serbaguna untuk acara besar desa.', 
+    {
+      'nama': 'Aula',
+      'lokasi': 'Kantor Desa',
+      'status': 'Tersedia',
+      'gambar_url':
+          'https://beritacianjur.com/wp-content/uploads/2021/07/WhatsApp-Image-2021-07-07-at-19.05.40.jpeg',
+      'deskripsi': 'Ruang serbaguna untuk acara besar desa.',
     },
-    { 
-      'nama': 'Kursi Pesta', 
-      'lokasi': 'Gudang Kantor Desa', 
-      'status': 'Tidak Tersedia', 
-      'gambar_url': 'https://sosialita.tanahlautkab.go.id/assets/uploads/webp/fotoproduk/thumbs/pt4K3vJE20250722130019.jpg.webp', 
-      'deskripsi': 'Stok kursi plastik untuk acara dan sewa masyarakat.', 
+    {
+      'nama': 'Kursi Pesta',
+      'lokasi': 'Gudang Kantor Desa',
+      'status': 'Tidak Tersedia',
+      'gambar_url':
+          'https://sosialita.tanahlautkab.go.id/assets/uploads/webp/fotoproduk/thumbs/pt4K3vJE20250722130019.jpg.webp',
+      'deskripsi': 'Stok kursi plastik untuk acara dan sewa masyarakat.',
     },
-    { 
-      'nama': 'Sound System', 
-      'lokasi': 'Kantor Desa', 
-      'status': 'Tersedia', 
-      'gambar_url': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQsrddQT6x3ZOMx-MiD5VN1r8tTZcVt9i3hszSI25L7MSXH0nF-EOlG1lmt7YbU2q_18c&usqp=CAU', 
+    {
+      'nama': 'Sound System',
+      'lokasi': 'Kantor Desa',
+      'status': 'Tersedia',
+      'gambar_url':
+          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQsrddQT6x3ZOMx-MiD5VN1r8tTZcVt9i3hszSI25L7MSXH0nF-EOlG1lmt7YbU2q_18c&usqp=CAU',
       'deskripsi': 'Sistem suara portable untuk acara outdoor/indoor.',
     },
-    { 
-      'nama': 'Tenda', 
-      'lokasi': 'Kantor Desa', 
-      'status': 'Tersedia', 
-      'gambar_url': 'https://image-asset.parto.id/i/1B/3e0cb4f938176cd98e874591894d2095.jpg', 
-      'deskripsi': 'Tenda serbaguna (ukuran 5x5m) untuk acara desa.', 
+    {
+      'nama': 'Tenda',
+      'lokasi': 'Kantor Desa',
+      'status': 'Tersedia',
+      'gambar_url':
+          'https://image-asset.parto.id/i/1B/3e0cb4f938176cd98e874591894d2095.jpg',
+      'deskripsi': 'Tenda serbaguna (ukuran 5x5m) untuk acara desa.',
     },
-    { 
-      'nama': 'Keranda Jenazah', 
-      'lokasi': 'Gudang Alat Desa', 
-      'status': 'Tersedia', 
-      'gambar_url': 'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQCJ6zreErtvBj-qLdiXKyPm8TnZPWm8ozCm-O_iTbgu8IlIPou', 
-      'deskripsi': 'Keranda Stainless Steel untuk keperluan pemakaman.', 
+    {
+      'nama': 'Keranda Jenazah',
+      'lokasi': 'Gudang Alat Desa',
+      'status': 'Tersedia',
+      'gambar_url':
+          'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQCJ6zreErtvBj-qLdiXKyPm8TnZPWm8ozCm-O_iTbgu8IlIPou',
+      'deskripsi': 'Keranda Stainless Steel untuk keperluan pemakaman.',
     },
   ];
 
-  int _selectedIndex = 1; 
+  int _selectedIndex = 1;
 
   void _onNavTapped(int index) {
     setState(() {
@@ -71,13 +78,13 @@ class _AsetPageState extends State<AsetPage> {
 
     if (index == 1) {
       if (ModalRoute.of(context)?.isFirst == false) {
-        Navigator.pop(context); 
+        Navigator.pop(context);
       }
     } else if (index == 0) {
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const MarketPage()),
-      // );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Marketplace()),
+      );
     } else if (index == 2) {
       // Navigator.pushReplacement(
       //   context,
@@ -86,13 +93,15 @@ class _AsetPageState extends State<AsetPage> {
     }
   }
 
-  // Fungsi untuk menampilkan Dialog Ketersediaan 
+  // Fungsi untuk menampilkan Dialog Ketersediaan
   void _showAsetDialog(BuildContext context, Map<String, dynamic> aset) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           contentPadding: const EdgeInsets.all(0),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -100,25 +109,38 @@ class _AsetPageState extends State<AsetPage> {
             children: [
               // muncul gambar di dialog
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
                 child: SizedBox(
                   height: 150,
                   width: double.infinity,
                   child: Image.network(
-                    aset['gambar_url'], 
+                    aset['gambar_url'],
                     fit: BoxFit.cover,
-                    loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
-                        ),
-                      );
-                    },
+                    loadingBuilder:
+                        (
+                          BuildContext context,
+                          Widget child,
+                          ImageChunkEvent? loadingProgress,
+                        ) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
                     errorBuilder: (context, error, stackTrace) => Container(
                       color: Colors.grey[300],
                       alignment: Alignment.center,
-                      child: const Text('Gagal memuat gambar', style: TextStyle(color: Colors.grey)),
+                      child: const Text(
+                        'Gagal memuat gambar',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
                   ),
                 ),
@@ -128,18 +150,32 @@ class _AsetPageState extends State<AsetPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(aset['nama'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text(
+                      aset['nama'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     const Divider(),
                     // Lokasi dan Deskripsi di dalam Dialog
-                    Text("Lokasi: ${aset['lokasi']}"), 
+                    Text("Lokasi: ${aset['lokasi']}"),
                     const SizedBox(height: 8),
-                    Text("Deskripsi: ${aset['deskripsi'] ?? 'Tidak ada deskripsi'}", style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                    Text(
+                      "Deskripsi: ${aset['deskripsi'] ?? 'Tidak ada deskripsi'}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       "Status: ${aset['status']}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: aset['status'] == 'Tersedia' ? Colors.green : Colors.red,
+                        color: aset['status'] == 'Tersedia'
+                            ? Colors.green
+                            : Colors.red,
                       ),
                     ),
                   ],
@@ -186,9 +222,11 @@ class _AsetPageState extends State<AsetPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                     child: Image.network(
-                      aset['gambar_url'], 
+                      aset['gambar_url'],
                       height: 150,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -198,14 +236,20 @@ class _AsetPageState extends State<AsetPage> {
                           height: 150,
                           color: Colors.grey[200],
                           alignment: Alignment.center,
-                          child: const CircularProgressIndicator(color: Colors.green),
+                          child: const CircularProgressIndicator(
+                            color: Colors.green,
+                          ),
                         );
                       },
                       errorBuilder: (context, error, stackTrace) => Container(
                         height: 150,
                         color: Colors.grey[300],
                         alignment: Alignment.center,
-                        child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                        child: const Icon(
+                          Icons.broken_image,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -231,17 +275,19 @@ class _AsetPageState extends State<AsetPage> {
                               Text(
                                 'Status: ${aset['status']}',
                                 style: TextStyle(
-                                  fontSize: 14, 
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: aset['status'] == 'Tersedia' ? Colors.green : Colors.red,
+                                  color: aset['status'] == 'Tersedia'
+                                      ? Colors.green
+                                      : Colors.red,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(width: 16),
-                        
+
                         // Tombol "Detail"
                         ElevatedButton(
                           onPressed: () {
@@ -274,9 +320,18 @@ class _AsetPageState extends State<AsetPage> {
         unselectedItemColor: Colors.grey,
         onTap: _onNavTapped,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.storefront_outlined), label: 'Market'),
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Akun'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.storefront_outlined),
+            label: 'Market',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_filled),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Akun',
+          ),
         ],
       ),
     );

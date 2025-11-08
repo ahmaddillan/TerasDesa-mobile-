@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:terasdesa/detailproduk.dart';
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/aset_page.dart';
+import 'package:terasdesa/marketplace_page.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -149,7 +150,12 @@ class _HomepageState extends State<Homepage> {
         _buildQuickAccessItem(
           icon: Icons.store_outlined,
           label: 'Marketplace',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Marketplace()),
+            );
+          },
         ),
       ],
     );
