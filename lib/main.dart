@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/register_page.dart';
 import 'package:terasdesa/homepage.dart';
+import 'package:terasdesa/aset_page.dart';
+
 
 void main() {
   runApp(const MainApp());
@@ -29,6 +31,7 @@ class MainApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/homepage': (context) => const Homepage(),
+        '/aset': (context) => const AsetPage(),
       },
     );
   }
