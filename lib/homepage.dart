@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:terasdesa/login_page.dart';
+import 'package:terasdesa/aset_page.dart';
+
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -132,12 +134,19 @@ class _HomepageState extends State<Homepage> {
         _buildQuickAccessItem(
           icon: Icons.inventory_outlined,
           label: 'Aset Desa',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AsetPage()),
+            );
+          },
         ),
         _buildQuickAccessItem(
           icon: Icons.construction_outlined,
           label: 'Pembangunan',
-          onTap: () {},
+          onTap: () {
+            
+          },
         ),
         _buildQuickAccessItem(
           icon: Icons.store_outlined,
