@@ -1,6 +1,5 @@
-// register_page.dart
-
 import 'package:flutter/material.dart';
+import 'services/auth_service.dart'; 
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -11,7 +10,15 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nohpController = TextEditingController();
+
   bool _obscurePassword = true;
+  bool _loading = false;
+
+  String _tanggalApi = ""; //format YYYY-MM-DD untuk API
 
   Future<void> _selectDate() async {
     DateTime? picked = await showDatePicker(
@@ -22,15 +29,61 @@ class _RegisterPageState extends State<RegisterPage> {
     );
     if (picked != null) {
       setState(() {
+        //TAMPILAN UNTUK USER (DD/MM/YYYY)
         _dateController.text =
             "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+
+        //FORMAT UNTUK API (YYYY-MM-DD)
+        _tanggalApi =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
+    }
+  }
+
+  //LOGIC CODE REGISTER KE API
+  void _handleRegister() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _nohpController.text.isEmpty ||
+        _tanggalApi.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi")));
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    final res = await ApiService.register(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      tanggalLahir: _tanggalApi, 
+      noHp: _nohpController.text.trim(),
+    );
+
+    setState(() => _loading = false);
+
+    if (res["status"] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Register berhasil, silakan login")),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res["message"] ?? "Register gagal")),
+      );
     }
   }
 
   @override
   void dispose() {
     _dateController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nohpController.dispose();
     super.dispose();
   }
 
@@ -91,12 +144,15 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
                 const SizedBox(height: 24),
+
+                //NAME
                 const Text(
                   'Full Name',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _nameController,
                   decoration: InputDecoration(
                     hintText: 'Enter your full name',
                     filled: true,
@@ -107,13 +163,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                //EMAIL
                 const Text(
                   'Email',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
                     filled: true,
@@ -124,7 +184,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                //TANGGAL LAHIR
                 const Text(
                   'Birth of date',
                   style: TextStyle(fontWeight: FontWeight.w600),
@@ -147,13 +210,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                //NO HP
                 const Text(
                   'Phone Number',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
-                  TextField(
+                TextField(
+                  controller: _nohpController,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
                     hintText: 'Enter your phone number',
@@ -165,13 +232,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                //PASSWORD
                 const Text(
                   'Set Password',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
@@ -195,12 +266,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
+                //BUTTON REGISTER
                 ElevatedButton(
-                  onPressed: () {
-                    // logika registrasi nanti di sini
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
+                  onPressed: _loading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B8E23),
                     foregroundColor: Colors.white,
@@ -211,10 +282,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     shadowColor: Colors.black.withOpacity(0.3),
                     elevation: 5,
                   ),
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Register',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ],
             ),

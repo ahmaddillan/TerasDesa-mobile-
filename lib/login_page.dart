@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:terasdesa/homepage.dart';
+import 'services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,6 +11,54 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
+
+  final TextEditingController _emailController = TextEditingController(); // ✅
+  final TextEditingController _passwordController =
+      TextEditingController(); // ✅
+
+  bool _loading = false;
+
+  // ✅ LOGIC LOGIN KE API
+  void _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email dan password wajib diisi")),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    final res = await ApiService.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    setState(() => _loading = false);
+
+    if (res["status"] == true) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
+
+      //PINDAH KE HOMEPAGE
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Homepage()),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(res["message"] ?? "Login gagal")));
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +89,15 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 30),
+
+                //EMAIL
                 const Text(
                   'Email',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _emailController, 
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
                     filled: true,
@@ -56,13 +108,17 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                // PASSWORD
                 const Text(
                   'Password',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
@@ -86,15 +142,12 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
-                // Tombol Login
+
+                //TOMBOL LOGIN
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Homepage()),
-                    );
-                  },
+                  onPressed: _loading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B8E23),
                     foregroundColor: Colors.white,
@@ -105,12 +158,19 @@ class _LoginPageState extends State<LoginPage> {
                     shadowColor: Colors.black.withOpacity(0.3),
                     elevation: 5,
                   ),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
+
                 const SizedBox(height: 20),
+
                 const Row(
                   children: [
                     Expanded(child: Divider(thickness: 1)),
@@ -121,13 +181,14 @@ class _LoginPageState extends State<LoginPage> {
                     Expanded(child: Divider(thickness: 1)),
                   ],
                 ),
+
                 const SizedBox(height: 20),
-                // Continue with Google
+
+                // Continue with Google (belum kita aktifkan)
                 OutlinedButton.icon(
                   onPressed: () {},
                   icon: Padding(
                     padding: const EdgeInsets.only(right: 10),
-                    // CATATAN: Pastikan path ini benar di pubspec.yaml Anda!
                     child: Image.asset(
                       'lib/assets/LoginRegister/google.png',
                       height: 24,
@@ -146,15 +207,15 @@ class _LoginPageState extends State<LoginPage> {
                     backgroundColor: Colors.grey[100],
                   ),
                 ),
-                const SizedBox(height: 12),
+
                 const SizedBox(height: 20),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text("Don't have an account? "),
                     GestureDetector(
                       onTap: () {
-                        // Navigasi ke rute '/register' yang didefinisikan di main.dart
                         Navigator.pushNamed(context, '/register');
                       },
                       child: const Text(
