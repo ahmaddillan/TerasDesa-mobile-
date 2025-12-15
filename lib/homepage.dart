@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:terasdesa/detailproduk.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:math';
+import 'package:intl/intl.dart';
+
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/aset_page.dart';
+import 'package:terasdesa/marketplace_page.dart';
+import 'package:terasdesa/detailproduk.dart';
+import 'package:terasdesa/models/produk_model.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -11,28 +18,92 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-  // Melacak tab yang sedang aktif di Bottom Navigation Bar
   int _selectedIndex = 1;
+  Produk? _randomProduct;
+  bool _isLoadingProduct = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRandomProduct();
+  }
+
+  String formatRupiah(int price) {
+    return NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(price);
+  }
+
+  Future<void> _handleRefresh() async {
+    await _fetchRandomProduct();
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  Future<void> _fetchRandomProduct() async {
+    final url = Uri.parse('http://10.0.2.2:8000/api/products');
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final List data = jsonResponse['data'];
+
+        if (data.isNotEmpty) {
+          final randomIndex = Random().nextInt(data.length);
+          setState(() {
+            _randomProduct = Produk.fromJson(data[randomIndex]);
+            _isLoadingProduct = false;
+          });
+        } else {
+          setState(() {
+            _isLoadingProduct = false;
+          });
+        }
+      } else {
+        setState(() {
+          _isLoadingProduct = false;
+        });
+      }
+    } catch (e) {
+      print("Error: $e");
+      setState(() {
+        _isLoadingProduct = false;
+      });
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    //untuk menambahkan logika navigasi
-    // Contoh: if (index == 1) Navigator.push(...)
+    if (index == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const MarketplacePage()),
+      ).then((_) {
+        setState(() {
+          _selectedIndex = 1;
+        });
+        _fetchRandomProduct();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Menggunakan Scaffold sebagai kerangka utama halaman
     return Scaffold(
       appBar: _buildCustomAppBar(),
-      body: _buildHomePageBody(), // Menampilkan body khusus untuk tab 'Beranda'
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: Theme.of(context).colorScheme.primary,
+        child: _buildHomePageBody(),
+      ),
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
-  /// widget appbar kustom
   PreferredSizeWidget _buildCustomAppBar() {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.primary,
@@ -40,8 +111,8 @@ class _HomepageState extends State<Homepage> {
       leading: const Padding(
         padding: EdgeInsets.all(8.0),
         child: CircleAvatar(
-          // Ganti dengan URL gambar profil pengguna
-          //backgroundImage:,
+          backgroundColor: Colors.white24,
+          child: Icon(Icons.person, color: Colors.white),
         ),
       ),
       title: Column(
@@ -57,11 +128,10 @@ class _HomepageState extends State<Homepage> {
         ],
       ),
       actions: [
-        // Tombol notifikasi
         IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const LoginPage()),
             );
@@ -71,13 +141,11 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  /// widget body homepage
   Widget _buildHomePageBody() {
-    // Menggunakan ListView agar konten bisa di-scroll
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16.0),
       children: [
-        // Menu Akses Cepat
         Text(
           'Akses cepat',
           style: Theme.of(
@@ -85,10 +153,9 @@ class _HomepageState extends State<Homepage> {
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        _buildQuickAccessMenu(), // Memanggil helper widget menu
+        _buildQuickAccessMenu(),
         const SizedBox(height: 24),
 
-        //  Feed Kabar Terbaru
         Text(
           'Kabar Terbaru Desa',
           style: Theme.of(
@@ -97,36 +164,61 @@ class _HomepageState extends State<Homepage> {
         ),
         const SizedBox(height: 16),
 
-        // Kartu Feed 1
         _buildFeedCard(
-          imageUrl: '',
+          imageUrl: 'https://placehold.co/600x400/png?text=Jembatan+Desa',
           category: 'PEMBANGUNAN',
-          title: 'pembenaran jembatan desa',
-          subtitle: 'Progres saat ini: 15%. Diperkirakan selesai...',
+          title: 'Pembenaran jembatan desa',
+          subtitle: 'Progres saat ini: 15%...',
           categoryColor: Colors.blue[700]!,
         ),
 
-        // Kartu Feed 2
-        _buildFeedCard(
-          imageUrl:
-              'https://kayu-seru.com/wp-content/uploads/2020/10/meja-belajar-kecil.jpg',
-          category: 'MARKETPLACE',
-          title: 'Meja lesehan kayu',
-          subtitle: 'Rp 130.000',
-          categoryColor: Colors.orange[800]!,
-
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const Detailproduk()),
-            );
-          },
-        ),
+        if (_isLoadingProduct)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_randomProduct != null)
+          _buildFeedCard(
+            imageUrl: _randomProduct!.imageUrl,
+            category: 'REKOMENDASI MARKETPLACE',
+            title: _randomProduct!.name,
+            subtitle: formatRupiah(_randomProduct!.price),
+            categoryColor: Colors.orange[800]!,
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Detailproduk(produk: _randomProduct!),
+                ),
+              );
+              if (result == true) {
+                _fetchRandomProduct();
+              }
+            },
+          )
+        else
+          _buildFeedCard(
+            imageUrl:
+                'https://placehold.co/600x400/grey/white?text=Belum+Ada+Produk',
+            category: 'MARKETPLACE',
+            title: 'Belum ada produk dijual',
+            subtitle: 'Yuk mulai jualan!',
+            categoryColor: Colors.grey,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MarketplacePage(),
+                ),
+              );
+            },
+          ),
       ],
     );
   }
 
-  /// row menu akses cepat
   Widget _buildQuickAccessMenu() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,12 +226,10 @@ class _HomepageState extends State<Homepage> {
         _buildQuickAccessItem(
           icon: Icons.inventory_outlined,
           label: 'Aset Desa',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AsetPage()),
-            );
-          },
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AsetPage()),
+          ),
         ),
         _buildQuickAccessItem(
           icon: Icons.construction_outlined,
@@ -149,13 +239,22 @@ class _HomepageState extends State<Homepage> {
         _buildQuickAccessItem(
           icon: Icons.store_outlined,
           label: 'Marketplace',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MarketplacePage()),
+            ).then((_) {
+              setState(() {
+                _selectedIndex = 1;
+              });
+              _fetchRandomProduct();
+            });
+          },
         ),
       ],
     );
   }
 
-  /// item menu akses cepat
   Widget _buildQuickAccessItem({
     required IconData icon,
     required String label,
@@ -198,7 +297,6 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  /// kartu feed
   Widget _buildFeedCard({
     required String imageUrl,
     required String category,
@@ -217,30 +315,28 @@ class _HomepageState extends State<Homepage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // item 1 :gambar
             Container(
               color: Colors.white,
               height: 180,
               width: double.infinity,
               child: Image.network(
                 imageUrl,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 40,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.grey[200],
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                      Text(
+                        "Gagal memuat",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            // item 2 : teks
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -252,7 +348,6 @@ class _HomepageState extends State<Homepage> {
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: categoryColor,
-                      letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -271,8 +366,6 @@ class _HomepageState extends State<Homepage> {
                       color: Colors.grey[800],
                       fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -283,10 +376,9 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  /// bottom navbar
   Widget _buildBottomNavBar() {
     return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed, // menampilkan fix item 4 maksimal
+      type: BottomNavigationBarType.fixed,
       currentIndex: _selectedIndex,
       onTap: _onItemTapped,
       selectedItemColor: Theme.of(context).colorScheme.primary,
