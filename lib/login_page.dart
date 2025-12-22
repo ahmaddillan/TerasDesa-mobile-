@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:terasdesa/homepage.dart';
 import 'services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,13 +13,12 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
 
-  final TextEditingController _emailController = TextEditingController(); // ✅
-  final TextEditingController _passwordController =
-      TextEditingController(); // ✅
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   bool _loading = false;
 
-  // ✅ LOGIC LOGIN KE API
+  // LOGIC LOGIN KE API
   void _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -36,12 +36,26 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _loading = false);
 
-    if (res["status"] == true) {
+    if (res["success"] == true) {
+      final data = res["data"];
+      final token = data["token"];
+
+      //SIMPAN TOKEN PAKE SHARED PREFERENCES
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", token);
+
+      // (opsional tapi berguna)
+      // await prefs.setInt("user_id", data["id"]);
+      // await prefs.setString("user_name", data["name"]);
+      // await prefs.setString("user_email", data["email"]);
+      // await prefs.setString("user_role", data["role"]);
+      // await prefs.setString("user_photo", data["tanggal_lahir"]);
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
 
-      //PINDAH KE HOMEPAGE
+      // PINDAH KE HOMEPAGE
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const Homepage()),
@@ -97,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
-                  controller: _emailController, 
+                  controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
                     filled: true,

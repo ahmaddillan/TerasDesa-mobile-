@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/aset_page.dart';
@@ -130,10 +131,13 @@ class _HomepageState extends State<Homepage> {
       actions: [
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
-          onPressed: () {
-            Navigator.pushReplacement(
+          onPressed: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.clear();
+            Navigator.pushNamedAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
+              '/login',
+              (route) => false,
             );
           },
         ),

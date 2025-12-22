@@ -3,6 +3,7 @@ import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/register_page.dart';
 import 'package:terasdesa/homepage.dart';
 import 'package:terasdesa/aset_page.dart';
+import 'package:terasdesa/splash_page.dart';
 
 void main() {
   runApp(const MainApp());
@@ -25,8 +26,9 @@ class MainApp extends StatelessWidget {
         fontFamily: 'Poppins',
       ),
 
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
+        '/': (context) => const SplashPage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/homepage': (context) => const Homepage(),
