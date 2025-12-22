@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart'; 
+import 'services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -59,13 +59,13 @@ class _RegisterPageState extends State<RegisterPage> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
-      tanggalLahir: _tanggalApi, 
+      tanggalLahir: _tanggalApi,
       noHp: _nohpController.text.trim(),
     );
 
     setState(() => _loading = false);
 
-    if (res["status"] == true) {
+    if (res["success"] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Register berhasil, silakan login")),
       );

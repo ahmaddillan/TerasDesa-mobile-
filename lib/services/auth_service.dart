@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8000/api";
+  static const String baseUrl = "http://10.0.2.2:3000/auth";
 
   static Future<Map<String, dynamic>> register({
     required String name,
@@ -14,10 +13,7 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse("$baseUrl/register"),
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
+      headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "name": name,
         "email": email,
@@ -27,7 +23,14 @@ class ApiService {
       }),
     );
 
-    return jsonDecode(response.body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      return {
+        "success": false,
+        "message": "Gagal register (${response.statusCode})",
+      };
+    }
   }
 
   static Future<Map<String, dynamic>> login({
@@ -36,20 +39,14 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse("$baseUrl/login"),
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
+      headers: {"Content-Type": "application/json"},
       body: jsonEncode({"email": email, "password": password}),
     );
 
-    final data = jsonDecode(response.body);
-
-    if (data["status"] == true) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("token", data["token"]);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      return {"success": false, "message": "Login gagal"};
     }
-
-    return data;
   }
 }
