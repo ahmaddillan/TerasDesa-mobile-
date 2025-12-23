@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/aset_page.dart';
 import 'package:terasdesa/marketplace_page.dart';
 import 'package:terasdesa/detailproduk.dart';
@@ -19,7 +18,6 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-  int _selectedIndex = 1;
   Produk? _randomProduct;
   bool _isLoadingProduct = true;
 
@@ -58,38 +56,16 @@ class _HomepageState extends State<Homepage> {
             _isLoadingProduct = false;
           });
         } else {
-          setState(() {
-            _isLoadingProduct = false;
-          });
+          _isLoadingProduct = false;
         }
       } else {
-        setState(() {
-          _isLoadingProduct = false;
-        });
+        _isLoadingProduct = false;
       }
     } catch (e) {
-      print("Error: $e");
-      setState(() {
-        _isLoadingProduct = false;
-      });
+      _isLoadingProduct = false;
     }
-  }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    if (index == 0) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const MarketplacePage()),
-      ).then((_) {
-        setState(() {
-          _selectedIndex = 1;
-        });
-        _fetchRandomProduct();
-      });
-    }
+    setState(() {});
   }
 
   @override
@@ -101,7 +77,6 @@ class _HomepageState extends State<Homepage> {
         color: Theme.of(context).colorScheme.primary,
         child: _buildHomePageBody(),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -116,17 +91,9 @@ class _HomepageState extends State<Homepage> {
           child: Icon(Icons.person, color: Colors.white),
         ),
       ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Selamat datang di TerasDesa',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-            ),
-          ),
-        ],
+      title: Text(
+        'Selamat datang di TerasDesa',
+        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
       ),
       actions: [
         IconButton(
@@ -150,21 +117,17 @@ class _HomepageState extends State<Homepage> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16.0),
       children: [
-        Text(
+        const Text(
           'Akses cepat',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         _buildQuickAccessMenu(),
         const SizedBox(height: 24),
 
-        Text(
+        const Text(
           'Kabar Terbaru Desa',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
 
@@ -173,7 +136,7 @@ class _HomepageState extends State<Homepage> {
           category: 'PEMBANGUNAN',
           title: 'Pembenaran jembatan desa',
           subtitle: 'Progres saat ini: 15%...',
-          categoryColor: Colors.blue[700]!,
+          categoryColor: Colors.blue,
         ),
 
         if (_isLoadingProduct)
@@ -189,32 +152,12 @@ class _HomepageState extends State<Homepage> {
             category: 'REKOMENDASI MARKETPLACE',
             title: _randomProduct!.name,
             subtitle: formatRupiah(_randomProduct!.price),
-            categoryColor: Colors.orange[800]!,
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => Detailproduk(produk: _randomProduct!),
-                ),
-              );
-              if (result == true) {
-                _fetchRandomProduct();
-              }
-            },
-          )
-        else
-          _buildFeedCard(
-            imageUrl:
-                'https://placehold.co/600x400/grey/white?text=Belum+Ada+Produk',
-            category: 'MARKETPLACE',
-            title: 'Belum ada produk dijual',
-            subtitle: 'Yuk mulai jualan!',
-            categoryColor: Colors.grey,
+            categoryColor: Colors.orange,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MarketplacePage(),
+                  builder: (_) => Detailproduk(produk: _randomProduct!),
                 ),
               );
             },
@@ -225,74 +168,43 @@ class _HomepageState extends State<Homepage> {
 
   Widget _buildQuickAccessMenu() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildQuickAccessItem(
+        _quickMenu(
           icon: Icons.inventory_outlined,
           label: 'Aset Desa',
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AsetPage()),
+            MaterialPageRoute(builder: (_) => const AsetPage()),
           ),
         ),
-        _buildQuickAccessItem(
-          icon: Icons.construction_outlined,
-          label: 'Pembangunan',
-          onTap: () {},
-        ),
-        _buildQuickAccessItem(
+        _quickMenu(
           icon: Icons.store_outlined,
           label: 'Marketplace',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const MarketplacePage()),
-            ).then((_) {
-              setState(() {
-                _selectedIndex = 1;
-              });
-              _fetchRandomProduct();
-            });
-          },
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MarketplacePage()),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickAccessItem({
+  Widget _quickMenu({
     required IconData icon,
     required String label,
-    required VoidCallback? onTap,
+    required VoidCallback onTap,
   }) {
     return Expanded(
       child: Card(
-        elevation: 2.0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 16.0,
-              horizontal: 8.0,
-            ),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  icon,
-                  size: 32,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                Icon(icon, size: 32, color: Colors.green),
                 const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(label),
               ],
             ),
           ),
@@ -310,39 +222,20 @@ class _HomepageState extends State<Homepage> {
     VoidCallback? onTap,
   }) {
     return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              color: Colors.white,
+            Image.network(
+              imageUrl,
               height: 180,
               width: double.infinity,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey[200],
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                      Text(
-                        "Gagal memuat",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              fit: BoxFit.cover,
             ),
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -357,50 +250,19 @@ class _HomepageState extends State<Homepage> {
                   const SizedBox(height: 4),
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[800],
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  Text(subtitle),
                 ],
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      selectedItemColor: Theme.of(context).colorScheme.primary,
-      unselectedItemColor: Colors.grey[600],
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.storefront_outlined),
-          label: 'Market',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_filled),
-          label: 'Beranda',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Akun',
-        ),
-      ],
     );
   }
 }
