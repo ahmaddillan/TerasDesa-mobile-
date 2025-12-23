@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:terasdesa/api_config.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:3000/auth";
-
   static Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -11,8 +10,9 @@ class ApiService {
     required String tanggalLahir,
     required String noHp,
   }) async {
+    print("${ApiConfig.baseUrl}");
     final response = await http.post(
-      Uri.parse("$baseUrl/register"),
+      Uri.parse("${ApiConfig.baseUrl}/auth/register"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "name": name,
@@ -37,8 +37,9 @@ class ApiService {
     required String email,
     required String password,
   }) async {
+    print("${ApiConfig.baseUrl}");
     final response = await http.post(
-      Uri.parse("$baseUrl/login"),
+      Uri.parse("${ApiConfig.baseUrl}/auth/login"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"email": email, "password": password}),
     );

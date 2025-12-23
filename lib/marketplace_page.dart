@@ -15,59 +15,35 @@ class MarketplacePage extends StatefulWidget {
 }
 
 class _MarketplacePageState extends State<MarketplacePage> {
-  int _selectedIndex = 0;
   List<Produk> listProduk = [];
   bool isLoading = true;
 
-  //Controller untuk Search Bar
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchProducts(); // Ambil semua data saat awal
+    fetchProducts();
   }
 
-  void _onItemTapped(int index) {
-    if (index == 1) Navigator.pop(context);
-  }
-
-  //fungsi agar bisa menerima kata kunci
   Future<void> fetchProducts([String? query]) async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
-    // Base URL
     String urlString = 'http://10.0.2.2:8000/api/products';
-
-    // Jika ada pencarian, tambahkan query parameter
     if (query != null && query.isNotEmpty) {
       urlString += '?name=$query';
     }
 
-    final url = Uri.parse(urlString);
-
     try {
-      final response = await http.get(url);
+      final response = await http.get(Uri.parse(urlString));
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
         final List data = jsonResponse['data'];
-        setState(() {
-          listProduk = data.map((item) => Produk.fromJson(item)).toList();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-        });
+        listProduk = data.map((e) => Produk.fromJson(e)).toList();
       }
-    } catch (e) {
-      print("Error: $e");
-      setState(() {
-        isLoading = false;
-      });
-    }
+    } catch (_) {}
+
+    setState(() => isLoading = false);
   }
 
   String formatRupiah(int price) {
@@ -80,9 +56,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor != Colors.blue
-        ? Theme.of(context).primaryColor
-        : Colors.green[800]!;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -97,19 +71,16 @@ class _MarketplacePageState extends State<MarketplacePage> {
           ),
           child: TextField(
             controller: _searchController,
-            textInputAction:
-                TextInputAction.search, // Tombol enter jadi ikon search
-            onSubmitted: (value) {
-              fetchProducts(value); // Panggil API saat tekan Enter
-            },
+            textInputAction: TextInputAction.search,
+            onSubmitted: fetchProducts,
             decoration: InputDecoration(
               hintText: 'Cari Produk yang dijual?',
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.clear, color: Colors.grey, size: 20),
+                icon: const Icon(Icons.clear, size: 20),
                 onPressed: () {
                   _searchController.clear();
-                  fetchProducts(); // Reset list saat tombol X ditekan
+                  fetchProducts();
                 },
               ),
               border: InputBorder.none,
@@ -131,12 +102,12 @@ class _MarketplacePageState extends State<MarketplacePage> {
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TambahProdukPage()),
+            MaterialPageRoute(builder: (_) => const TambahProdukPage()),
           );
           if (result == true) {
             fetchProducts();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Produk Berhasil Ditambahkan!")),
+              const SnackBar(content: Text("Produk berhasil ditambahkan")),
             );
           }
         },
@@ -150,14 +121,12 @@ class _MarketplacePageState extends State<MarketplacePage> {
               child: listProduk.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.3,
-                        ),
-                        const Center(
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(
                           child: Text(
-                            "Produk tidak ditemukan.",
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                            "Produk tidak ditemukan",
+                            style: TextStyle(color: Colors.grey),
                           ),
                         ),
                       ],
@@ -176,23 +145,12 @@ class _MarketplacePageState extends State<MarketplacePage> {
                       itemBuilder: (context, index) {
                         final produk = listProduk[index];
                         return GestureDetector(
-                          onTap: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    Detailproduk(produk: produk),
-                              ),
-                            );
-                            if (result == true) {
-                              fetchProducts();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Daftar diperbarui"),
-                                ),
-                              );
-                            }
-                          },
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => Detailproduk(produk: produk),
+                            ),
+                          ),
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -208,17 +166,15 @@ class _MarketplacePageState extends State<MarketplacePage> {
                                     ),
                                     child: Image.network(
                                       produk.imageUrl,
-                                      width: double.infinity,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (c, o, s) => const Icon(
-                                        Icons.broken_image,
-                                        color: Colors.grey,
-                                      ),
+                                      width: double.infinity,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.broken_image),
                                     ),
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(8.0),
+                                  padding: const EdgeInsets.all(8),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -255,28 +211,6 @@ class _MarketplacePageState extends State<MarketplacePage> {
                       },
                     ),
             ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey[600],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.storefront),
-            label: 'Market',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Akun',
-          ),
-        ],
-      ),
     );
   }
 }

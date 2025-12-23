@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:terasdesa/login_page.dart';
 import 'package:terasdesa/register_page.dart';
-import 'package:terasdesa/homepage.dart';
-import 'package:terasdesa/aset_page.dart';
 import 'package:terasdesa/splash_page.dart';
+import 'package:terasdesa/main_page.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
   runApp(const MainApp());
 }
 
@@ -25,14 +27,12 @@ class MainApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Poppins',
       ),
-
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashPage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/homepage': (context) => const Homepage(),
-        '/aset': (context) => const AsetPage(),
+        '/main': (context) => const MainPage(),
       },
     );
   }

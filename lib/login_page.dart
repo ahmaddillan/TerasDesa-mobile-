@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:terasdesa/homepage.dart';
 import 'services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,26 +39,20 @@ class _LoginPageState extends State<LoginPage> {
       final data = res["data"];
       final token = data["token"];
 
-      //SIMPAN TOKEN PAKE SHARED PREFERENCES
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("token", token);
-
-      // (opsional tapi berguna)
-      // await prefs.setInt("user_id", data["id"]);
-      // await prefs.setString("user_name", data["name"]);
-      // await prefs.setString("user_email", data["email"]);
-      // await prefs.setString("user_role", data["role"]);
-      // await prefs.setString("user_photo", data["tanggal_lahir"]);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Login berhasil")));
-
-      // PINDAH KE HOMEPAGE
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Homepage()),
+      await prefs.setString("token", token ?? "");
+      await prefs.setInt("user_id", data["id"] ?? 0);
+      await prefs.setString("user_name", data["name"] ?? "");
+      await prefs.setString("user_email", data["email"] ?? "");
+      await prefs.setString(
+        "user_tanggal_lahir",
+        data["tanggal_lahir"]?.toString() ?? "",
       );
+      await prefs.setString("user_role", data["role"] ?? "user");
+      await prefs.setString("user_photo", data["photo"] ?? "");
+      await prefs.setString("user_no_hp", data["no_hp"] ?? "");
+
+      Navigator.pushReplacementNamed(context, '/main');
     } else {
       ScaffoldMessenger.of(
         context,
