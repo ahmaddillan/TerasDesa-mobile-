@@ -32,7 +32,7 @@ class MainApp extends StatelessWidget {
         '/': (context) => const SplashPage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/main': (context) => const MainPage(),
+        '/main': (context) => MainPage(),
       },
     );
   }

@@ -1,67 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:intl/intl.dart';
-
-import 'detailproduk.dart';
+import 'api_config.dart';
 import 'models/produk_model.dart';
+import 'detailproduk.dart';
 import 'tambah_produk.dart';
+import 'wishlist_page.dart';
 
 class MarketplacePage extends StatefulWidget {
   const MarketplacePage({super.key});
 
   @override
-  State<MarketplacePage> createState() => _MarketplacePageState();
+  _MarketplacePageState createState() => _MarketplacePageState();
 }
 
 class _MarketplacePageState extends State<MarketplacePage> {
-  List<Produk> listProduk = [];
-  bool isLoading = true;
-
-  final TextEditingController _searchController = TextEditingController();
+  List<ProdukModel> _allProducts = [];
+  List<ProdukModel> _filteredProducts = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchProducts();
+    _fetchData(); // Memuat data saat pertama kali buka
   }
 
-  Future<void> fetchProducts([String? query]) async {
-    setState(() => isLoading = true);
-
-    String urlString = 'http://10.0.2.2:8000/api/products';
-    if (query != null && query.isNotEmpty) {
-      urlString += '?name=$query';
-    }
-
+  // Fungsi utama untuk mengambil data dari API
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
     try {
-      final response = await http.get(Uri.parse(urlString));
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/products'),
+      );
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        final List data = jsonResponse['data'];
-        listProduk = data.map((e) => Produk.fromJson(e)).toList();
-      }
-    } catch (_) {}
+        final decodedData = json.decode(response.body);
+        List productsJson = (decodedData is Map)
+            ? (decodedData['data'] ?? [])
+            : decodedData;
 
-    setState(() => isLoading = false);
+        if (mounted) {
+          setState(() {
+            _allProducts = productsJson
+                .map((item) => ProdukModel.fromJson(item))
+                .toList();
+            _filteredProducts = _allProducts;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error Fetch: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  String formatRupiah(int price) {
-    return NumberFormat.currency(
-      locale: 'id',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    ).format(price);
+  // Fungsi khusus untuk RefreshIndicator (harus mengembalikan Future)
+  Future<void> _onRefresh() async {
+    await _fetchData();
+  }
+
+  String _getImageUrl(String? path) {
+    if (path == null || path.isEmpty) return "";
+    if (!path.contains('/products/')) {
+      path = path.replaceFirst('/uploads/', '/uploads/products/');
+    }
+    return '${ApiConfig.baseUrl}$path';
   }
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: Colors.green[700],
+        elevation: 0,
         automaticallyImplyLeading: false,
         title: Container(
           height: 40,
@@ -70,147 +82,136 @@ class _MarketplacePageState extends State<MarketplacePage> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
-            controller: _searchController,
-            textInputAction: TextInputAction.search,
-            onSubmitted: fetchProducts,
-            decoration: InputDecoration(
-              hintText: 'Cari Produk yang dijual?',
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.clear, size: 20),
-                onPressed: () {
-                  _searchController.clear();
-                  fetchProducts();
-                },
-              ),
+            onChanged: (value) {
+              setState(() {
+                _filteredProducts = _allProducts
+                    .where(
+                      (p) => p.name.toLowerCase().contains(value.toLowerCase()),
+                    )
+                    .toList();
+              });
+            },
+            decoration: const InputDecoration(
+              hintText: "Cari produk desa...",
+              prefixIcon: Icon(Icons.search, color: Colors.grey),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
             ),
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_cart, color: Colors.white),
-            onPressed: () {},
+            icon: const Icon(Icons.favorite_border, color: Colors.white),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (c) => const WishlistPage()),
+            ),
           ),
         ],
       ),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const TambahProdukPage()),
-          );
-          if (result == true) {
-            fetchProducts();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Produk berhasil ditambahkan")),
-            );
-          }
-        },
-      ),
-
-      body: isLoading
-          ? Center(child: CircularProgressIndicator(color: primaryColor))
-          : RefreshIndicator(
-              onRefresh: () => fetchProducts(_searchController.text),
-              color: primaryColor,
-              child: listProduk.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 200),
-                        Center(
-                          child: Text(
-                            "Produk tidak ditemukan",
-                            style: TextStyle(color: Colors.grey),
-                          ),
+      // MENGGUNAKAN REFRESH INDICATOR UNTUK GESTUR SCROLL KEATAS
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: Colors.green[700],
+        child: _isLoading && _allProducts.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _filteredProducts.isEmpty
+            ? ListView(
+                // Gunakan ListView agar tetap bisa di-pull refresh saat kosong
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  const Center(child: Text("Produk tidak ditemukan")),
+                ],
+              )
+            : GridView.builder(
+                padding: const EdgeInsets.all(12),
+                // AlwaysScrollableScrollPhysics agar bisa ditarik meski item sedikit
+                physics: const AlwaysScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: _filteredProducts.length,
+                itemBuilder: (context, index) {
+                  final item = _filteredProducts[index];
+                  return GestureDetector(
+                    onTap: () async {
+                      // MENUNGGU HASIL DARI HALAMAN DETAIL
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (c) => DetailProduk(produk: item),
                         ),
-                      ],
-                    )
-                  : GridView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                          ),
-                      itemCount: listProduk.length,
-                      itemBuilder: (context, index) {
-                        final produk = listProduk[index];
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => Detailproduk(produk: produk),
+                      );
+                      // Jika result adalah true (setelah hapus), refresh otomatis
+                      if (result == true) {
+                        _fetchData();
+                      }
+                    },
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                              child: Image.network(
+                                _getImageUrl(item.imageUrl),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (c, e, s) =>
+                                    const Icon(Icons.broken_image),
+                              ),
                             ),
                           ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(10),
-                                    ),
-                                    child: Image.network(
-                                      produk.imageUrl,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      errorBuilder: (_, __, ___) =>
-                                          const Icon(Icons.broken_image),
-                                    ),
+                                Text(
+                                  item.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                  maxLines: 1,
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        produk.name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        formatRupiah(produk.price),
-                                        style: TextStyle(
-                                          color: primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        produk.sellerLocation,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
+                                Text(
+                                  "Rp ${item.price.toStringAsFixed(0)}",
+                                  style: TextStyle(
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
-            ),
+                  );
+                },
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green[700],
+        onPressed: () async {
+          final isAdded = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (c) => const TambahProdukPage()),
+          );
+          if (isAdded == true) _fetchData();
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }

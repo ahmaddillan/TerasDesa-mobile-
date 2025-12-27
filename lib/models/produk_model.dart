@@ -1,48 +1,34 @@
-class Produk {
+class ProdukModel {
   final int id;
   final String name;
-  final int price;
   final String description;
-  final String imageUrl;
-  final String sellerName;
-  final String sellerLocation;
-  final double rating;
-  final int soldCount;
+  final double price;
+  final String? imageUrl;
+  final int? userId;
+  final int stock;
 
-  Produk({
+  ProdukModel({
     required this.id,
     required this.name,
-    required this.price,
     required this.description,
-    required this.imageUrl,
-    required this.sellerName,
-    required this.sellerLocation,
-    required this.rating,
-    required this.soldCount,
+    required this.price,
+    this.imageUrl,
+    this.userId,
+    required this.stock,
   });
-  factory Produk.fromJson(Map<String, dynamic> json) {
-    return Produk(
-      id: json['id'] ?? 0,
 
-      name: json['name'] ?? 'Tanpa Nama',
-
+  factory ProdukModel.fromJson(Map<String, dynamic> json) {
+    return ProdukModel(
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
       price: json['price'] != null
-          ? int.tryParse(json['price'].toString()) ?? 0
-          : 0,
-
-      description: json['description'] ?? '-',
-      imageUrl: json['image_url'] ?? '',
-
-      sellerName: json['seller_name'] ?? 'Warga Desa',
-      sellerLocation: json['seller_location'] ?? '-',
-
-      rating: json['rating'] != null
-          ? double.tryParse(json['rating'].toString()) ?? 0.0
+          ? double.parse(json['price'].toString())
           : 0.0,
-
-      soldCount: json['sold_count'] != null
-          ? int.tryParse(json['sold_count'].toString()) ?? 0
-          : 0,
+      // Backend menggunakan kolom image_url
+      imageUrl: json['image_url'] ?? json['imageUrl'],
+      userId: json['user_id'],
+      stock: json['stock'] ?? 0,
     );
   }
 }

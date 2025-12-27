@@ -218,7 +218,10 @@ class _AsetPageState extends State<AsetPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aset Desa'),
+        title: const Text(
+          'Aset Desa',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: Colors.green[700],
       ),
       body: ListView.builder(

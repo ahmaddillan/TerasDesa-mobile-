@@ -1,210 +1,185 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:math';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
+import 'models/produk_model.dart';
+import 'detailproduk.dart';
 
-import 'package:terasdesa/aset_page.dart';
-import 'package:terasdesa/marketplace_page.dart';
-import 'package:terasdesa/detailproduk.dart';
-import 'package:terasdesa/models/produk_model.dart';
+class HomePage extends StatefulWidget {
+  // Fungsi callback untuk berpindah tab di MainPage
+  final Function(int) onTabChange;
 
-class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  const HomePage({super.key, required this.onTabChange});
 
   @override
-  State<Homepage> createState() => _HomepageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomepageState extends State<Homepage> {
-  Produk? _randomProduct;
-  bool _isLoadingProduct = true;
+class _HomePageState extends State<HomePage> {
+  late Future<List<ProdukModel>> _homeData;
 
   @override
   void initState() {
     super.initState();
-    _fetchRandomProduct();
+    _homeData = fetchHomeProducts();
   }
 
-  String formatRupiah(int price) {
-    return NumberFormat.currency(
-      locale: 'id',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    ).format(price);
-  }
-
-  Future<void> _handleRefresh() async {
-    await _fetchRandomProduct();
-    await Future.delayed(const Duration(seconds: 1));
-  }
-
-  Future<void> _fetchRandomProduct() async {
-    final url = Uri.parse('http://10.0.2.2:8000/api/products');
-
+  Future<List<ProdukModel>> fetchHomeProducts() async {
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/products'),
+      );
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        final List data = jsonResponse['data'];
-
-        if (data.isNotEmpty) {
-          final randomIndex = Random().nextInt(data.length);
-          setState(() {
-            _randomProduct = Produk.fromJson(data[randomIndex]);
-            _isLoadingProduct = false;
-          });
-        } else {
-          _isLoadingProduct = false;
-        }
+        final decodedData = json.decode(response.body);
+        List productsJson = (decodedData is Map)
+            ? (decodedData['data'] ?? [])
+            : decodedData;
+        // Kita hanya ambil 3 produk terbaru untuk ditampilkan di home
+        return productsJson
+            .map((item) => ProdukModel.fromJson(item))
+            .toList()
+            .take(3)
+            .toList();
       } else {
-        _isLoadingProduct = false;
+        throw Exception('Gagal muat data');
       }
     } catch (e) {
-      _isLoadingProduct = false;
+      rethrow;
     }
-
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildCustomAppBar(),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: Theme.of(context).colorScheme.primary,
-        child: _buildHomePageBody(),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildCustomAppBar() {
-    return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      elevation: 0,
-      leading: const Padding(
-        padding: EdgeInsets.all(8.0),
-        child: CircleAvatar(
-          backgroundColor: Colors.white24,
-          child: Icon(Icons.person, color: Colors.white),
-        ),
-      ),
-      title: Text(
-        'Selamat datang di TerasDesa',
-        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout, color: Colors.white),
-          onPressed: () async {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.clear();
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/login',
-              (route) => false,
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHomePageBody() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        const Text(
-          'Akses cepat',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        _buildQuickAccessMenu(),
-        const SizedBox(height: 24),
-
-        const Text(
-          'Kabar Terbaru Desa',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-
-        _buildFeedCard(
-          imageUrl: 'https://placehold.co/600x400/png?text=Jembatan+Desa',
-          category: 'PEMBANGUNAN',
-          title: 'Pembenaran jembatan desa',
-          subtitle: 'Progres saat ini: 15%...',
-          categoryColor: Colors.blue,
-        ),
-
-        if (_isLoadingProduct)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.green[700],
+        elevation: 0,
+        title: const Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.white24,
+              child: Icon(Icons.person, color: Colors.white),
             ),
-          )
-        else if (_randomProduct != null)
-          _buildFeedCard(
-            imageUrl: _randomProduct!.imageUrl,
-            category: 'REKOMENDASI MARKETPLACE',
-            title: _randomProduct!.name,
-            subtitle: formatRupiah(_randomProduct!.price),
-            categoryColor: Colors.orange,
+            SizedBox(width: 10),
+            Text(
+              "Selamat datang di TerasDesa",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: Colors.white),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. MENU AKSES CEPAT
+            _buildCategoryMenu(),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                "Kabar Terbaru Desa",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            _buildPembangunanCard(),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Text(
+                "Produk Unggulan",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            _buildMarketplaceSection(),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryMenu() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // TOMBOL ASET
+          _categoryItem(
+            icon: Icons.account_balance_wallet,
+            label: "Aset Desa",
+            color: Colors.green,
+            onTap: () => widget.onTabChange(1), // Pindah ke Tab Aset (Index 1)
+          ),
+
+          // TOMBOL PEMBANGUNAN
+          _categoryItem(
+            icon: Icons.construction,
+            label: "Pembangunan",
+            color: Colors.orange,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => Detailproduk(produk: _randomProduct!),
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Fitur Pembangunan sedang dikembangkan"),
                 ),
               );
             },
           ),
-      ],
+
+          // TOMBOL MARKETPLACE
+          _categoryItem(
+            icon: Icons.store,
+            label: "Marketplace",
+            color: Colors.blue,
+            onTap: () =>
+                widget.onTabChange(0), // Pindah ke Tab Market (Index 0)
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickAccessMenu() {
-    return Row(
-      children: [
-        _quickMenu(
-          icon: Icons.inventory_outlined,
-          label: 'Aset Desa',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AsetPage()),
-          ),
-        ),
-        _quickMenu(
-          icon: Icons.store_outlined,
-          label: 'Marketplace',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MarketplacePage()),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _quickMenu({
+  Widget _categoryItem({
     required IconData icon,
     required String label,
+    required Color color,
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: Card(
-        child: InkWell(
-          onTap: onTap,
+      child: InkWell(
+        onTap: onTap,
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               children: [
-                Icon(icon, size: 32, color: Colors.green),
+                Icon(icon, color: color, size: 30),
                 const SizedBox(height: 8),
-                Text(label),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -213,52 +188,138 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  Widget _buildFeedCard({
-    required String imageUrl,
-    required String category,
-    required String title,
-    required String subtitle,
-    required Color categoryColor,
-    VoidCallback? onTap,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(
-              imageUrl,
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: categoryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(subtitle),
-                ],
+  Widget _buildPembangunanCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 150,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(15),
               ),
+              image: const DecorationImage(
+                image: NetworkImage("https://via.placeholder.com/400x200"),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "PROYEK DESA",
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  "Renovasi Jembatan Desa",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Progres saat ini: 45%. Target selesai akhir tahun.",
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMarketplaceSection() {
+    return FutureBuilder<List<ProdukModel>>(
+      future: _homeData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text("Belum ada produk unggulan"));
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) {
+            final item = snapshot.data![index];
+            return _buildHomeProductCard(item);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildHomeProductCard(ProdukModel item) {
+    String getImageUrl(String? path) {
+      if (path == null || path.isEmpty) return "";
+      if (!path.contains('/products/')) {
+        path = path.replaceFirst('/uploads/', '/uploads/products/');
+      }
+      return '${ApiConfig.baseUrl}$path';
+    }
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (c) => DetailProduk(produk: item)),
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(12),
+              ),
+              child: Image.network(
+                getImageUrl(item.imageUrl),
+                height: 80,
+                width: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Rp ${item.price.toStringAsFixed(0)}",
+                  style: TextStyle(
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
