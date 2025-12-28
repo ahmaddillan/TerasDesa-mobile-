@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http_parser/http_parser.dart'; // Solusi untuk error format file
-import 'package:path/path.dart' as p; // Solusi untuk error context & path
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as p;
 import 'api_config.dart';
 
 class TambahProdukPage extends StatefulWidget {
@@ -18,6 +18,7 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController descController = TextEditingController();
+  final TextEditingController stockController = TextEditingController();
 
   File? _selectedImage;
   bool isLoading = false;
@@ -60,13 +61,15 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
   }
 
   Future<void> simpanProduk() async {
-    // Validasi Awal
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
+        stockController.text.isEmpty ||
         _selectedImage == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Data wajib diisi!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Nama, Harga, Stok, dan Foto wajib diisi!"),
+        ),
+      );
       return;
     }
 
@@ -88,22 +91,18 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
       final url = Uri.parse('${ApiConfig.baseUrl}/api/products');
       var request = http.MultipartRequest('POST', url);
 
-      // Header dengan Token
       request.headers.addAll({
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
       });
 
-      // Data Form
       request.fields['name'] = nameController.text;
       request.fields['price'] = priceController.text;
+      request.fields['stock'] = stockController.text;
       request.fields['description'] = descController.text;
 
-      // PENANGANAN GAMBAR (Agar tidak ditolak formatnya)
       String filePath = _selectedImage!.path;
-      String extension = p
-          .extension(filePath)
-          .replaceAll('.', ''); // ambil 'png' atau 'jpg'
+      String extension = p.extension(filePath).replaceAll('.', '');
 
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -119,16 +118,14 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
       var response = await request.send();
       final responseData = await response.stream.bytesToString();
 
-      // CEK JIKA WIDGET MASIH TERPASANG (Solusi Error Context)
       if (!mounted) return;
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text("Berhasil Jual Barang!")));
-        Navigator.pop(context, true); // Kembali dan refresh
+        Navigator.pop(context, true);
       } else {
-        debugPrint("Error detail: $responseData");
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Gagal Simpan: $responseData")));
@@ -147,6 +144,7 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Jual Barang", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green[700],
@@ -185,21 +183,31 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildTextField(nameController, "Nama Barang", Icons.shopping_bag),
+            _buildTextField(nameController, "Nama Barang"),
             const SizedBox(height: 15),
-            _buildTextField(
-              priceController,
-              "Harga",
-              Icons.money,
-              isNumber: true,
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildTextField(
+                    priceController,
+                    "Harga",
+                    isNumber: true,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: _buildTextField(
+                    stockController,
+                    "Stok",
+                    isNumber: true,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 15),
-            _buildTextField(
-              descController,
-              "Deskripsi",
-              Icons.description,
-              maxLines: 4,
-            ),
+            _buildTextField(descController, "Deskripsi", maxLines: 4),
             const SizedBox(height: 30),
             isLoading
                 ? const CircularProgressIndicator()
@@ -209,6 +217,9 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green[700],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: simpanProduk,
                       child: const Text(
@@ -216,6 +227,7 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -228,8 +240,7 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
 
   Widget _buildTextField(
     TextEditingController controller,
-    String label,
-    IconData icon, {
+    String label, {
     bool isNumber = false,
     int maxLines = 1,
   }) {
@@ -239,8 +250,9 @@ class _TambahProdukPageState extends State<TambahProdukPage> {
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.green[700]),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.white,
       ),
     );
   }
