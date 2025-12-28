@@ -1,4 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../models/aset_model.dart';
+import '../services/aset_service.dart';
+import '../api_config.dart';
 
 class AsetPage extends StatefulWidget {
   const AsetPage({super.key});
@@ -8,131 +14,133 @@ class AsetPage extends StatefulWidget {
 }
 
 class _AsetPageState extends State<AsetPage> {
-  final List<Map<String, dynamic>> asetDesa = [
-    {
-      'nama': 'Balai Desa',
-      'lokasi': 'Pusat Desa',
-      'status': 'Tersedia',
-      'gambar_url':
-          'https://cdn.digitaldesa.com/uploads/profil/32.01.02.2009/spanduk/396b9ba14698b0b96671172b7a23d7ba.png',
-      'deskripsi': 'Gedung utama untuk administrasi dan pertemuan desa.',
-    },
-    {
-      'nama': 'Mobil Operasional Desa',
-      'lokasi': 'Garasi Kantor Desa',
-      'status': 'Tidak Tersedia',
-      'gambar_url':
-          'https://img.icarcdn.com/mobil123-news/body/67281-suzuki_apv_1.5_sgx_arena_van_silver_2010.jpg',
-      'deskripsi': 'Kendaraan siaga untuk keperluan operasional dan darurat.',
-    },
-    {
-      'nama': 'Aula',
-      'lokasi': 'Kantor Desa',
-      'status': 'Tersedia',
-      'gambar_url':
-          'https://beritacianjur.com/wp-content/uploads/2021/07/WhatsApp-Image-2021-07-07-at-19.05.40.jpeg',
-      'deskripsi': 'Ruang serbaguna untuk acara besar desa.',
-    },
-  ];
+  List<AsetModel> asetList = [];
+  bool loading = true;
 
-  // ===================== DETAIL DIALOG =====================
-  void _showAsetDialog(BuildContext context, Map<String, dynamic> aset) {
+  @override
+  void initState() {
+    super.initState();
+    loadAset();
+  }
+
+  Future<void> loadAset() async {
+    try {
+      final data = await AsetService.getAset();
+      setState(() {
+        asetList = data;
+        loading = false;
+      });
+    } catch (_) {
+      setState(() => loading = false);
+    }
+  }
+
+  // Detail Aset
+  void showDetail(BuildContext context, AsetModel aset) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding: EdgeInsets.zero,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: Image.network(
-                aset['gambar_url'],
-                height: 150,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 150,
-                  color: Colors.grey[300],
-                  child: const Center(child: Text('Gagal memuat gambar')),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (aset.gambarUrl != null && aset.gambarUrl!.isNotEmpty)
+                  Image.network(
+                    "${ApiConfig.baseUrl}/uploads/assets/${aset.gambarUrl}",
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _imageError(),
+                  )
+                else
+                  _imageEmpty(),
+
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        aset.nama,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text("Lokasi: ${aset.lokasi}"),
+                      const SizedBox(height: 8),
+                      Text("Deskripsi: ${aset.deskripsi}"),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Status: ${aset.status}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: aset.status == 'Tersedia'
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    aset['nama'],
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Divider(),
-                  Text("Lokasi: ${aset['lokasi']}"),
-                  const SizedBox(height: 8),
-                  Text("Deskripsi: ${aset['deskripsi']}"),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Status: ${aset['status']}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: aset['status'] == 'Tersedia'
-                          ? Colors.green
-                          : Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+            child: const Text("Tutup"),
           ),
         ],
       ),
     );
   }
 
-  // ===================== FORM TAMBAH / EDIT =====================
-  void _showFormAset(
-    BuildContext context, {
-    Map<String, dynamic>? aset,
-    int? index,
-  }) {
-    final nama = TextEditingController(text: aset?['nama'] ?? '');
-    final lokasi = TextEditingController(text: aset?['lokasi'] ?? '');
-    final gambar = TextEditingController(text: aset?['gambar_url'] ?? '');
-    final deskripsi = TextEditingController(text: aset?['deskripsi'] ?? '');
-    String status = aset?['status'] ?? 'Tersedia';
+  // form untuk tambah dan edit
+  void showForm({AsetModel? aset}) {
+    final isEdit = aset != null;
+
+    final nama = TextEditingController(text: aset?.nama ?? '');
+    final lokasi = TextEditingController(text: aset?.lokasi ?? '');
+    final deskripsi = TextEditingController(text: aset?.deskripsi ?? '');
+    String status = aset?.status ?? 'Tersedia';
+
+    File? selectedImage;
+    final picker = ImagePicker();
+
+    Future<void> pickImage(StateSetter setStateDialog) async {
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        setStateDialog(() {
+          selectedImage = File(picked.path);
+        });
+      }
+    }
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(aset == null ? 'Tambah Aset' : 'Edit Aset'),
-        content: StatefulBuilder(
-          builder: (context, setStateDialog) => SingleChildScrollView(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: Text(isEdit ? "Edit Aset" : "Tambah Aset"),
+          content: SingleChildScrollView(
             child: Column(
               children: [
                 TextField(
                   controller: nama,
-                  decoration: const InputDecoration(labelText: 'Nama Aset'),
+                  decoration: const InputDecoration(labelText: "Nama"),
                 ),
                 TextField(
                   controller: lokasi,
-                  decoration: const InputDecoration(labelText: 'Lokasi'),
+                  decoration: const InputDecoration(labelText: "Lokasi"),
                 ),
                 DropdownButtonFormField(
                   value: status,
-                  decoration: const InputDecoration(labelText: 'Status'),
+                  decoration: const InputDecoration(labelText: "Status"),
                   items: const [
                     DropdownMenuItem(
                       value: 'Tersedia',
@@ -143,158 +151,228 @@ class _AsetPageState extends State<AsetPage> {
                       child: Text('Tidak Tersedia'),
                     ),
                   ],
-                  onChanged: (v) => setStateDialog(() => status = v!),
-                ),
-                TextField(
-                  controller: gambar,
-                  decoration: const InputDecoration(labelText: 'URL Gambar'),
+                  onChanged: (v) => status = v!,
                 ),
                 TextField(
                   controller: deskripsi,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Deskripsi'),
+                  decoration: const InputDecoration(labelText: "Deskripsi"),
+                ),
+                const SizedBox(height: 12),
+
+                // PREVIEW GAMBAR
+                if (selectedImage != null)
+                  Image.file(selectedImage!, height: 120)
+                else if (isEdit &&
+                    aset!.gambarUrl != null &&
+                    aset.gambarUrl!.isNotEmpty)
+                  Image.network(
+                    "${ApiConfig.baseUrl}/uploads/assets/${aset.gambarUrl}",
+                    height: 120,
+                    errorBuilder: (_, __, ___) => _imageError(),
+                  ),
+
+                TextButton.icon(
+                  onPressed: () => pickImage(setStateDialog),
+                  icon: const Icon(Icons.image),
+                  label: const Text("Pilih Gambar"),
                 ),
               ],
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                final data = {
-                  'nama': nama.text,
-                  'lokasi': lokasi.text,
-                  'status': status,
-                  'gambar_url': gambar.text,
-                  'deskripsi': deskripsi.text,
-                };
-                if (aset == null) {
-                  asetDesa.add(data);
-                } else {
-                  asetDesa[index!] = data;
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              child: const Text("Simpan"),
+              onPressed: () async {
+                try {
+                  if (!isEdit && selectedImage == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Gambar wajib dipilih")),
+                    );
+                    return;
+                  }
+
+                  final data = AsetModel(
+                    id: aset?.id,
+                    nama: nama.text.trim(),
+                    lokasi: lokasi.text.trim(),
+                    status: status,
+                    gambarUrl: aset?.gambarUrl,
+                    deskripsi: deskripsi.text.trim(),
+                  );
+
+                  if (isEdit) {
+                    await AsetService.editAset(
+                      id: aset!.id!,
+                      aset: data,
+                      image: selectedImage,
+                    );
+                  } else {
+                    await AsetService.tambahAset(
+                      aset: data,
+                      image: selectedImage!,
+                    );
+                  }
+
+                  Navigator.pop(context);
+                  await loadAset();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Aset berhasil disimpan")),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
                 }
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // ===================== HAPUS =====================
-  void _confirmDelete(BuildContext context, int index) {
+  //Konfirmasi hapus aset
+  void confirmDelete(BuildContext context, AsetModel aset) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Hapus Aset'),
-        content: const Text('Yakin ingin menghapus aset ini?'),
+        title: const Text("Hapus Aset"),
+        content: Text("Yakin ingin menghapus '${aset.nama}'?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: const Text("Batal"),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              setState(() => asetDesa.removeAt(index));
+            onPressed: () async {
+              await AsetService.hapusAset(aset.id!);
               Navigator.pop(context);
+              loadAset();
             },
-            child: const Text('Hapus'),
+            child: const Text("Hapus"),
           ),
         ],
       ),
     );
   }
 
-  // ===================== UI =====================
+  //ui
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Aset Desa',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          "Aset Desa",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green[700],
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: ListView.builder(
-        itemCount: asetDesa.length,
-        itemBuilder: (context, index) {
-          final aset = asetDesa[index];
-          return Card(
-            margin: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Image.network(
-                  aset['gambar_url'],
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: asetList.length,
+              itemBuilder: (_, i) {
+                final a = asetList[i];
+
+                return Card(
+                  margin: const EdgeInsets.all(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      if (a.gambarUrl != null && a.gambarUrl!.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          child: Image.network(
+                            "${ApiConfig.baseUrl}/uploads/assets/${a.gambarUrl}",
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _imageError(),
+                          ),
+                        ),
+
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
                           children: [
-                            Text(
-                              aset['nama'],
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    a.nama,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Status: ${a.status}",
+                                    style: TextStyle(
+                                      color: a.status == 'Tersedia'
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              "Status: ${aset['status']}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: aset['status'] == 'Tersedia'
-                                    ? Colors.green
-                                    : Colors.red,
+                            IconButton(
+                              icon: const Icon(Icons.info, color: Colors.green),
+                              onPressed: () => showDetail(context, a),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.orange,
                               ),
+                              onPressed: () => showForm(aset: a),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => confirmDelete(context, a),
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.orange),
-                        onPressed: () =>
-                            _showFormAset(context, aset: aset, index: index),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _confirmDelete(context, index),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.info_outline,
-                          color: Colors.green,
-                        ),
-                        onPressed: () => _showAsetDialog(context, aset),
-                      ),
                     ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
+      // tombol tambah aset
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green[700],
-        onPressed: () => _showFormAset(context),
+        onPressed: () => showForm(),
         child: const Icon(Icons.add),
       ),
     );
   }
+
+  //error handle
+  Widget _imageError() => Container(
+    height: 160,
+    color: Colors.grey[300],
+    alignment: Alignment.center,
+    child: const Text("Gagal memuat gambar"),
+  );
+
+  Widget _imageEmpty() => Container(
+    height: 160,
+    color: Colors.grey[300],
+    alignment: Alignment.center,
+    child: const Text("Tidak ada gambar"),
+  );
 }
