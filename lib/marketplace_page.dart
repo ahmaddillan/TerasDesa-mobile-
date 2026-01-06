@@ -6,6 +6,8 @@ import 'models/produk_model.dart';
 import 'detailproduk.dart';
 import 'tambah_produk.dart';
 import 'wishlist_page.dart';
+import 'cart_page.dart';
+import 'transaksi_page.dart';
 
 class MarketplacePage extends StatefulWidget {
   const MarketplacePage({super.key});
@@ -106,6 +108,28 @@ class _MarketplacePageState extends State<MarketplacePage> {
               context,
               MaterialPageRoute(builder: (c) => const WishlistPage()),
             ),
+          ),
+
+          /// 🛒 KERANJANG
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartPage()),
+              );
+            },
+          ),
+
+          /// 📦 TRANSAKSI
+          IconButton(
+            icon: const Icon(Icons.receipt_long_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TransaksiPage()),
+              );
+            },
           ),
         ],
       ),

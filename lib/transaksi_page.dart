@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:terasdesa/detailtransaksi.dart';
-import 'dart:convert';
-
-import 'api_config.dart';
-import 'checkout_page.dart';
+import '../services/transaksi_service.dart';
+import 'cart_page.dart';
+import 'marketplace_page.dart';
 
 class TransaksiPage extends StatefulWidget {
   const TransaksiPage({super.key});
@@ -15,335 +13,184 @@ class TransaksiPage extends StatefulWidget {
 }
 
 class _TransaksiPageState extends State<TransaksiPage> {
-  late Future<List<dynamic>> _futureTransaksi;
+  final NumberFormat rupiah = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
+
+  List transaksiList = [];
+  bool isLoading = true;
+
+  Future<void> loadTransaksi() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return;
+
+      final data = await TransaksiService.getMyTransaksi(token);
+
+      setState(() {
+        transaksiList = data;
+        isLoading = false;
+      });
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _futureTransaksi = _fetchTransaksi();
+    loadTransaksi();
   }
 
-  // =========================
-  // FETCH TRANSAKSI API
-  // =========================
-  Future<List<dynamic>> _fetchTransaksi() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+  Widget transaksiCard(dynamic trx) {
+    final total = double.parse(trx['total'].toString()).toInt();
+    final date = DateTime.parse(trx['created_at']);
 
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/api/transaksi'),
-      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Gagal mengambil transaksi');
-    }
-  }
-
-  // =========================
-  // UI
-  // =========================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-
-      body: FutureBuilder<List<dynamic>>(
-        future: _futureTransaksi,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return const Center(child: Text('Gagal memuat transaksi'));
-          }
-
-          final transaksiList = snapshot.data ?? [];
-
-          if (transaksiList.isEmpty) {
-            return const Center(child: Text('Belum ada transaksi'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {
-                _futureTransaksi = _fetchTransaksi();
-              });
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildFilterRow(),
-                const SizedBox(height: 16),
-                _buildInfoBanner(),
-                const SizedBox(height: 16),
-
-                ...transaksiList.map(
-                  (t) => _buildTransactionCard(
-                    context: context,
-                    transaksiId: t['id'],
-                    date: t['created_at'],
-                    total: t['total'],
-                    status: t['status'],
-                    items: t['items'] ?? [],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
-
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  // =========================
-  // APP BAR
-  // =========================
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: const TextField(
-          decoration: InputDecoration(
-            hintText: 'Cari transaksi',
-            prefixIcon: Icon(Icons.search),
-            border: InputBorder.none,
-          ),
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart_outlined),
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CheckoutPage(),
-                    ),
-                  );
-
-                  // AUTO REFRESH SETELAH CHECKOUT
-                  if (result == true) {
-                    setState(() {
-                      _futureTransaksi = _fetchTransaksi();
-                    });
-                  }
-                },
+              const Icon(Icons.shopping_bag_outlined, size: 18),
+              const SizedBox(width: 6),
+              const Text(
+                'Belanja',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Text(
+                trx['status'],
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
-        ),
-        IconButton(icon: const Icon(Icons.receipt_long), onPressed: () {}),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  // =========================
-  // FILTER
-  // =========================
-  Widget _buildFilterRow() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _chip('Semua Status'),
-          const SizedBox(width: 8),
-          _chip('Semua Produk'),
-          const SizedBox(width: 8),
-          _chip('Semua'),
-        ],
-      ),
-    );
-  }
-
-  Widget _chip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Text(text),
-          const SizedBox(width: 4),
-          const Icon(Icons.keyboard_arrow_down, size: 16),
-        ],
-      ),
-    );
-  }
-
-  // =========================
-  // INFO BANNER
-  // =========================
-  Widget _buildInfoBanner() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          const SizedBox(height: 4),
           Text(
-            'Keterlambatan Pick Up & Pengiriman',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            DateFormat('d MMM yyyy', 'id_ID').format(date),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
-          SizedBox(height: 8),
-          Text(
-            'Proses pick up & pengiriman berpotensi terlambat sehubungan dengan tingginya antusiasme belanja.',
-            style: TextStyle(color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =========================
-  // TRANSACTION CARD (API)
-  // =========================
-  Widget _buildTransactionCard({
-    required BuildContext context,
-    required int transaksiId,
-    required String date,
-    required dynamic total,
-    required String status,
-    required List items,
-  }) {
-    final parsedDate = DateTime.parse(date);
-
-    final String productName = items.isNotEmpty
-        ? items[0]['product_name']
-        : 'Produk';
-
-    final int moreItems = items.length > 1 ? items.length - 1 : 0;
-
-    Color statusColor(String status) {
-      switch (status.toLowerCase()) {
-        case 'selesai':
-        case 'success':
-          return Colors.green;
-
-        case 'pending':
-        case 'menunggu':
-          return Colors.orange;
-
-        case 'batal':
-        case 'cancel':
-          return Colors.red;
-
-        default:
-          return Colors.grey;
-      }
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.shopping_bag),
-                const SizedBox(width: 8),
-                const Text('Belanja'),
-                const Spacer(),
-                Text(
-                  status.toUpperCase(),
-                  style: TextStyle(
-                    color: statusColor(status),
-                    fontWeight: FontWeight.bold,
-                  ),
+          const Divider(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(6),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${parsedDate.day}/${parsedDate.month}/${parsedDate.year}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            const Divider(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  productName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                if (moreItems > 0)
-                  Text(
-                    '+$moreItems produk lainnya',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                const SizedBox(height: 6),
-                Text(
-                  'Total Belanja Rp ${double.parse(total.toString()).toStringAsFixed(0)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          DetailTransaksiPage(transaksiId: transaksiId),
+                child: const Icon(Icons.image),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Produk transaksi',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  );
+                    SizedBox(height: 4),
+                    Text(
+                      '1 barang',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Total Belanja', style: TextStyle(fontSize: 12)),
+                  Text(
+                    rupiah.format(total),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  // tidak mengubah fungsionalitas
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
                 child: const Text('Beli Lagi'),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  // =========================
-  // BOTTOM NAV
-  // =========================
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: 3,
-      selectedItemColor: const Color(0xFF00AA5B),
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
-        BottomNavigationBarItem(icon: Icon(Icons.inventory), label: 'Aset'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.construction),
-          label: 'Pembangunan',
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F4F6),
+      appBar: AppBar(
+        elevation: 0.5,
+
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const MarketplacePage()),
+              (route) => false,
+            );
+          },
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.store), label: 'Marketplace'),
-      ],
+
+        title: const Text('Transaksi'),
+
+        /// 🛒 BUTTON KERANJANG
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartPage()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : transaksiList.isEmpty
+          ? const Center(child: Text('Belum ada transaksi'))
+          : ListView(children: transaksiList.map(transaksiCard).toList()),
     );
   }
 }

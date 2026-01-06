@@ -11,15 +11,25 @@ class TransaksiService {
 
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/api/transaksi'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((e) => TransaksiModel.fromJson(e)).toList();
+    } else {
+      throw Exception('Gagal mengambil transaksi');
+    }
+  }
+
+  static Future<List<dynamic>> getMyTransaksi(String token) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/transaksi'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
     } else {
       throw Exception('Gagal mengambil transaksi');
     }
