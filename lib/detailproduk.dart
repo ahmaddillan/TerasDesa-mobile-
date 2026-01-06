@@ -4,6 +4,9 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
 import 'models/produk_model.dart';
+import 'services/cart_service.dart';
+import 'cart_page.dart';
+import 'checkout_page.dart';
 
 class DetailProduk extends StatefulWidget {
   final ProdukModel produk;
@@ -327,14 +330,67 @@ class _DetailProdukState extends State<DetailProduk> {
                     Icons.shopping_cart_outlined,
                     color: Colors.green,
                   ),
-                  onPressed: () {},
+                  onPressed: () async {
+                    try {
+                      final prefs = await SharedPreferences.getInstance();
+                      final token = prefs.getString('token');
+
+                      if (token == null) {
+                        throw Exception('TOKEN NULL');
+                      }
+
+                      await CartService.addToCart(
+                        token: token,
+                        productId: widget.produk.id, // SESUAI FIELD ASLI
+                        quantity: 1,
+                      );
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CartPage()),
+                      );
+                    } catch (e) {
+                      debugPrint('ADD TO CART ERROR: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Gagal menambahkan ke cart'),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 15),
             ],
             Expanded(
               child: ElevatedButton(
-                onPressed: isMyProduct ? _confirmDelete : () {},
+                onPressed: isMyProduct
+                    ? _confirmDelete
+                    : () {
+                        // 1. Konversi harga (double → int)
+                        final int price = widget.produk.price.toInt();
+
+                        // 2. Buat item checkout (SESUAI CartModel)
+                        final checkoutItem = CartModel(
+                          shopName: 'Toko Official',
+                          productName: widget.produk.name,
+                          price: price,
+                          oldPrice: price,
+                          qty: 1,
+                          selected: true,
+                        );
+
+                        // 3. Pindah ke halaman checkout
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CheckoutPage(
+                              items: [checkoutItem],
+                              totalPrice: price,
+                            ),
+                          ),
+                        );
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isMyProduct
                       ? Colors.red[700]
